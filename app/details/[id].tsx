@@ -1,3 +1,4 @@
+import { dummyEvents, SportEvent } from '@/constants/data';
 import { useTheme } from '@/context/ThemeContext';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { toggleFavorite } from '@/store/favoritesSlice';
@@ -7,19 +8,6 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-interface SportEvent {
-    idEvent: string;
-    strEvent: string;
-    strThumb: string;
-    strStatus: string;
-    dateEvent: string;
-    strLeague: string;
-    strDescriptionEN?: string; // Optional description
-    strHomeTeam?: string;
-    strAwayTeam?: string;
-    intHomeScore?: string;
-    intAwayScore?: string;
-}
 
 export default function DetailsScreen() {
     const { id } = useLocalSearchParams();
@@ -40,26 +28,41 @@ export default function DetailsScreen() {
 
     const fetchEventDetails = async () => {
         try {
+            // Check if this is one of our dummy events first
+            const dummyItem = dummyEvents.find((d) => String(d.idEvent) === String(id));
+            if (dummyItem) {
+                setEvent(dummyItem);
+                setLoading(false);
+                return;
+            }
+
             // Try to fetch details from API
             const response = await axios.get(`https://www.thesportsdb.com/api/v1/json/3/lookupevent.php?id=${id}`);
             if (response.data && response.data.events) {
                 setEvent(response.data.events[0]);
             } else {
-                // Fallback: Try to find in favorites if offline or API fails, or use dummy
-                const favItem = favorites.find((f: SportEvent) => f.idEvent === id);
+                // Fallback: Try to find in favorites if offline or API fails
+                const favItem = favorites.find((f: SportEvent) => String(f.idEvent) === String(id));
+
                 if (favItem) {
                     setEvent(favItem);
                 } else {
-                    // Simulate dummy data for the specific ID if not found
-                    setEvent({
-                        idEvent: id as string,
-                        strEvent: 'Event Details Unavailable',
-                        strThumb: 'https://via.placeholder.com/300x150?text=No+Details',
-                        strStatus: 'Unknown',
-                        dateEvent: '2025-01-01',
-                        strLeague: 'Unknown League',
-                        strDescriptionEN: 'Detailed information for this event could not be fetched from the API.',
-                    });
+                    // Fallback: Check shared dummy data
+                    const dummyItem = dummyEvents.find((d) => String(d.idEvent) === String(id));
+                    if (dummyItem) {
+                        setEvent(dummyItem);
+                    } else {
+                        // Final fallback if absolutely nothing found
+                        setEvent({
+                            idEvent: id as string,
+                            strEvent: 'Event Details Unavailable',
+                            strThumb: 'https://via.placeholder.com/300x150?text=No+Details',
+                            strStatus: 'Unknown',
+                            dateEvent: '2025-01-01',
+                            strLeague: 'Unknown League',
+                            strDescriptionEN: 'Detailed information for this event could not be fetched.',
+                        });
+                    }
                 }
             }
         } catch (error) {

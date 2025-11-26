@@ -4,15 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-// Define the data structure
-interface SportEvent {
-  idEvent: string;
-  strEvent: string;
-  strThumb: string;
-  strStatus: string;
-  dateEvent: string;
-  strLeague: string;
-}
+import { SportEvent } from '@/constants/data';
 
 export default function HomeScreen() {
   const [events, setEvents] = useState<SportEvent[]>([]);
@@ -45,32 +37,6 @@ export default function HomeScreen() {
     }
   };
 
-  const dummyEvents: SportEvent[] = [
-    {
-      idEvent: '1',
-      strEvent: 'Arsenal vs Chelsea',
-      strThumb: 'https://www.thesportsdb.com/images/media/event/thumb/yqyupv1544549071.jpg', // Example image
-      strStatus: 'Upcoming',
-      dateEvent: '2025-12-01',
-      strLeague: 'English Premier League',
-    },
-    {
-      idEvent: '2',
-      strEvent: 'Liverpool vs Man City',
-      strThumb: 'https://www.thesportsdb.com/images/media/event/thumb/vsysxv1544549117.jpg',
-      strStatus: 'Upcoming',
-      dateEvent: '2025-12-02',
-      strLeague: 'English Premier League',
-    },
-    {
-      idEvent: '3',
-      strEvent: 'Man Utd vs Tottenham',
-      strThumb: 'https://www.thesportsdb.com/images/media/event/thumb/uxtqrx1544549156.jpg',
-      strStatus: 'Upcoming',
-      dateEvent: '2025-12-03',
-      strLeague: 'English Premier League',
-    },
-  ];
 
   const renderItem = ({ item }: { item: SportEvent }) => (
     <TouchableOpacity
