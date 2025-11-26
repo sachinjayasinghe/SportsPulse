@@ -1,98 +1,179 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import axios from 'axios';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+// Define the data structure
+interface SportEvent {
+  idEvent: string;
+  strEvent: string;
+  strThumb: string;
+  strStatus: string;
+  dateEvent: string;
+  strLeague: string;
+}
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [events, setEvents] = useState<SportEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      // Using TheSportsDB API (Free Tier) - Next 15 Events for English Premier League (id 4328)
+      // If this fails due to key issues, we'll fall back to dummy data
+      const response = await axios.get('https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=4328');
+
+      if (response.data && response.data.events) {
+        setEvents(response.data.events);
+      } else {
+        // Fallback dummy data if API returns null (common with free tier limits)
+        setEvents(dummyEvents);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setEvents(dummyEvents);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const dummyEvents: SportEvent[] = [
+    {
+      idEvent: '1',
+      strEvent: 'Arsenal vs Chelsea',
+      strThumb: 'https://www.thesportsdb.com/images/media/event/thumb/yqyupv1544549071.jpg', // Example image
+      strStatus: 'Upcoming',
+      dateEvent: '2025-12-01',
+      strLeague: 'English Premier League',
+    },
+    {
+      idEvent: '2',
+      strEvent: 'Liverpool vs Man City',
+      strThumb: 'https://www.thesportsdb.com/images/media/event/thumb/vsysxv1544549117.jpg',
+      strStatus: 'Upcoming',
+      dateEvent: '2025-12-02',
+      strLeague: 'English Premier League',
+    },
+    {
+      idEvent: '3',
+      strEvent: 'Man Utd vs Tottenham',
+      strThumb: 'https://www.thesportsdb.com/images/media/event/thumb/uxtqrx1544549156.jpg',
+      strStatus: 'Upcoming',
+      dateEvent: '2025-12-03',
+      strLeague: 'English Premier League',
+    },
+  ];
+
+  const renderItem = ({ item }: { item: SportEvent }) => (
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: isDark ? '#1e1e1e' : '#ffffff' }]}
+      onPress={() => router.push(`/details/${item.idEvent}`)}
+    >
+      <Image
+        source={{ uri: item.strThumb || 'https://via.placeholder.com/300x150?text=No+Image' }}
+        style={styles.cardImage}
+        resizeMode="cover"
+      />
+      <View style={styles.cardContent}>
+        <Text style={[styles.cardTitle, { color: isDark ? '#ffffff' : '#333333' }]}>{item.strEvent}</Text>
+        <Text style={[styles.cardSubtitle, { color: isDark ? '#bbbbbb' : '#666666' }]}>{item.strLeague}</Text>
+        <View style={styles.statusContainer}>
+          <Text style={styles.statusText}>{item.dateEvent}</Text>
+          <Text style={[styles.statusBadge, { color: '#007AFF' }]}>{item.strStatus || 'Upcoming'}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <View style={[styles.center, { backgroundColor: isDark ? '#121212' : '#f5f5f5' }]}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#121212' : '#f5f5f5' }]}>
+      <View style={styles.header}>
+        <Text style={[styles.headerTitle, { color: isDark ? '#ffffff' : '#333333' }]}>Upcoming Matches</Text>
+      </View>
+      <FlatList
+        data={events}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.idEvent}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    padding: 20,
+    paddingTop: 40, // Adjust for status bar
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  listContent: {
+    padding: 16,
+  },
+  card: {
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  cardImage: {
+    width: '100%',
+    height: 180,
+  },
+  cardContent: {
+    padding: 16,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 14,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  statusContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statusText: {
+    fontSize: 12,
+    color: '#888',
+  },
+  statusBadge: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
